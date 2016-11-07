@@ -16,11 +16,17 @@ namespace SolutionEventMonitor
         "ShellInit",
         new[] { "ShellInit" },
         new[] { VSConstants.UICONTEXT.ShellInitialized_string })]
+    [ProvideUIContextRule(Consts.HasCSharpVBProjectContextGuidString,
+        "HasCSharpVBProject",
+        "HasCSharpProject | HasVBProject",
+        new[] { "HasCSharpProject", "HasVBProject" },
+        new[] { "SolutionHasProjectCapability:CSharp", "SolutionHasProjectCapability:VB" })]
     public sealed class VsPackage : Package
     {
         private ILogger _eventLogger;
         private ISolutionWatcher _solutionWatcher;
         private UIContext _packageContext;
+        private UIContext _csVbProjectContext;
         private UIContext _solutionLoadedContext;
         private UIContext _solutionExistsContext;
         private UIContext _solutionOpeningContext;
@@ -34,6 +40,9 @@ namespace SolutionEventMonitor
 
             _packageContext = UIContext.FromUIContextGuid(Consts.PackageActivationGuid);
             _packageContext.UIContextChanged += PackageContext_UIContextChanged;
+
+            _csVbProjectContext = UIContext.FromUIContextGuid(Consts.HasCSharpVBProjectContextGuid);
+            _csVbProjectContext.UIContextChanged += CSharpVBProjectContext_UIContextChanged;
 
             _solutionExistsContext = KnownUIContexts.SolutionExistsContext;
             _solutionExistsContext.UIContextChanged += SolutionExistsContext_UIContextChanged;
@@ -50,6 +59,11 @@ namespace SolutionEventMonitor
         private void PackageContext_UIContextChanged(object sender, UIContextChangedEventArgs e)
         {
             _eventLogger.Log($"PackageContext # Activated: {e.Activated}");
+        }
+        
+        private void CSharpVBProjectContext_UIContextChanged(object sender, UIContextChangedEventArgs e)
+        {
+            _eventLogger.Log($"SolutionHasCSharpVBProjectContext # Activated: {e.Activated}");
         }
 
         private void SolutionExistsContext_UIContextChanged(object sender, UIContextChangedEventArgs e)
@@ -76,6 +90,9 @@ namespace SolutionEventMonitor
 
                 _packageContext.UIContextChanged -= PackageContext_UIContextChanged;
                 _packageContext = null;
+
+                _csVbProjectContext.UIContextChanged -= CSharpVBProjectContext_UIContextChanged;
+                _csVbProjectContext = null;
 
                 _solutionExistsContext.UIContextChanged -= SolutionExistsContext_UIContextChanged;
                 _solutionExistsContext = null;
